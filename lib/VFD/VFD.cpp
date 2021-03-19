@@ -6,7 +6,7 @@ VFD::VFD(int CS_Pin){
 }
 
 //驅動器初始化
-void VFD::init(){                                                 ////RS485_初始化
+void VFD::init(){                                                 //RS485_初始化
   Serial1.begin(115200);                                          //RS485_USART
   pinMode(CS_Pin_, OUTPUT);                                
   digitalWrite(CS_Pin_, RS485Receive);                                                  
@@ -185,11 +185,20 @@ void VFD::MS_TO_RPM()
  
 }
 
-//驅動器方向指令
-void VFD::VFD_SPEED_COMMAND(int fun , float lspeed,float rspeed ){              
- 		command_state=fun;
+//轉速指令寫
+void VFD::VFD_SPEED_COMMAND(float lspeed,float rspeed ){              
+ 		command_state=0;
 		linear_vel_x_R=rspeed;                      
     linear_vel_x_L=lspeed;  
+		MS_TO_RPM();
+		VFD_COMMAND();
+}
+
+//轉速指令讀
+void VFD::VFD_SPEED_COMMAND(){              
+ 		command_state=1;
+		linear_vel_x_R=0;                      
+    linear_vel_x_L=0;  
 		MS_TO_RPM();
 		VFD_COMMAND();
 }
