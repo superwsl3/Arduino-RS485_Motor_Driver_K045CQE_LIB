@@ -5,83 +5,63 @@
 
 //---Def---//
 //-VFD
-#define RS485Transmit   HIGH                                   
-#define RS485Receive    LOW
-#define RS485_TX_SIZE 17							    //傳送資料總長度(ID1_CRC+ID2_CRC+DATA_CRC)
-#define RS485_RX_SIZE 18								//傳送資料總長度(ID1_CRC+ID2_CRC+DATA_CRC)
-#define RX_SIZE_BOUND 16								//RX接收資料上限長度
-#define RX_SIZE_CRC 6									//CRC傳送資料長度
-#define TX_SIZE_DATA 15							        //TX傳送資料長度
-#define INTERVAL_MESSAGE1 500                           //詢問驅動器轉速間隔時間
+#define RS485Transmit   HIGH                                            //RS485 傳送狀態                
+#define RS485Receive    LOW                                             //RS485 接收狀態
+#define RS485_TX_SIZE 17							                    //傳送資料總長度(ID1_CRC+ID2_CRC+DATA_CRC)
+#define RS485_RX_SIZE 18								                //傳送資料總長度(ID1_CRC+ID2_CRC+DATA_CRC)
+#define RX_SIZE_BOUND 16								                //RX接收資料上限長度
+#define RX_SIZE_CRC 6									                //CRC傳送資料長度
+#define TX_SIZE_DATA 15							                        //TX傳送資料長度
 class VFD{
     public:
         //---Constructor---//
-        VFD(int CS_Pin);
+        VFD(int CS_Pin);                                                //建構子
         //---Variable---//
         //-RS485
-        //TX
-        unsigned char TX_Write_GO=0;
-        unsigned char TX_Read_GO;
-        unsigned char TX_Read_Fun;
-        unsigned char command_state;
+        //TX    
+        unsigned char command_state;                                    //驅動器指令旗標變數(0:寫/1:讀)
         //RX
-        unsigned char RX_INDEX=1;                       //接收資料旗標
-        unsigned char RX_DATA_Flag;                     //驅動顯示旗標(0:關/1:開)
-        unsigned char DATA_RX_ID1[RS485_RX_SIZE]={0};   //右輪接收資料陣列
-        unsigned char DATA_RX_ID2[RS485_RX_SIZE]={0};   //左輪接收資料陣列
-        unsigned char RX_Data_buf[RS485_RX_SIZE]={0};
-        unsigned char RX_Data[RS485_RX_SIZE]={0};
-        //TIMER
-        unsigned long time_1;
-        //-ROS TO Arduino---//
-        float linear_vel_x_R=500;                         //TUNE
-        float linear_vel_x_L=500;                         //TUNE
-        float angular_vel_z;
-        unsigned short linear_vel_x_TL;
-        unsigned short linear_vel_x_TR;
-        unsigned char linear_vel_x_L_Hi,linear_vel_x_L_Lo;
-        unsigned char linear_vel_x_R_Hi,linear_vel_x_R_Lo;
-        //---VDF TO Arduino(DATA TO ROS)---/
-        signed int  LWeel_Rspeed_temp,RWeel_Rspeed_temp;
-        signed int  RWeel_Rspeed_s,LWeel_Rspeed_s;
-        float LWeel_Rspeed,RWeel_Rspeed;
-        float AVG_Real_Speed;
-        float Real_OMEG;
-     
+        unsigned char RX_INDEX=1;                                       //接收資料旗標
+        unsigned char RX_DATA_Flag;                                     //驅動器接收資料確認旗標(0:關/1:開)
+        unsigned char DATA_RX_ID1[RS485_RX_SIZE]={0};                   //右輪接收資料陣列
+        unsigned char DATA_RX_ID2[RS485_RX_SIZE]={0};                   //左輪接收資料陣列
+        unsigned char RX_Data_buf[RS485_RX_SIZE]={0};                   //驅動器接收資料暫存陣列
+        unsigned char RX_Data[RS485_RX_SIZE]={0};                       //驅動器接收資料陣列
+
+        //-資料變數---//                                                   
+        float linear_vel_x_L=0;                                         //驅動器左輪轉速(m/s)輸入變數
+        float linear_vel_x_R=0;                                         //驅動器右輪轉速(m/s)輸入變數     
+        unsigned short linear_vel_x_TL;                                 //驅動器左輪轉速(rpm)輸入變數
+        unsigned short linear_vel_x_TR;                                 //驅動器右輪轉速(rpm)輸入變數
+        unsigned char linear_vel_x_L_Hi,linear_vel_x_L_Lo;              //驅動器左輪轉速(rpm)輸入變數_高位元,驅動器左輪轉速(rpm)輸入變數_低位元
+        unsigned char linear_vel_x_R_Hi,linear_vel_x_R_Lo;              //驅動器右輪轉速(rpm)輸入變數_高位元,驅動器右輪轉速(rpm)輸入變數_低位元
+        //---VDF_DATA TO Arduino---/
+        signed int  LWeel_Rspeed_temp,RWeel_Rspeed_temp;                //左輪:確認CRC正確,資料放入轉速暫存器變數,右輪:確認CRC正確,資料放入轉速暫存器變數
+        signed int  RWeel_Rspeed_s,LWeel_Rspeed_s;                      //左輪:方向轉換變數暫存,右輪:方向轉換變數暫存
+        float LWeel_Rspeed,RWeel_Rspeed;                                //左輪實際轉速(rpm),右輪實際轉速(rpm)
+
         //---Function---//
         void init();
-        unsigned short crc_chk(unsigned char *buf, int length);
-        void Command_TX(unsigned char Num,unsigned char Command1,unsigned char ID1_MSB,unsigned char ID1_LSB,unsigned char Command2,unsigned char ID2_MSB,unsigned char ID2_LSB);
-        void VFD_COMMAND();
-        void VFD_DATA_RX();
-        void VFD_DATA_ISR();
-        void MS_TO_RPM();
-        void Timer_ISR();
-        void VFD_SPEED_COMMAND(int fun , float lspeed,float rspeed );
+        unsigned short crc_chk(unsigned char *buf, int length);         //RS485_CRC
+        void Command_TX(unsigned char Num,unsigned char Command1,unsigned char ID1_MSB,unsigned char ID1_LSB,unsigned char Command2,unsigned char ID2_MSB,unsigned char ID2_LSB);//驅動器傳送命令格式
+        void VFD_COMMAND();                                             //驅動器傳送命令指令(寫/讀)
+        void VFD_DATA_RX();                                             //驅動器回授資料確認(CRC)
+        void VFD_DATA_ISR();                                            //VFD接收中斷
+        void MS_TO_RPM();                                               //MS單位轉RPM單位
+        void VFD_SPEED_COMMAND(int fun , float lspeed,float rspeed );   //封裝指令
     private:
         //---Constructor---// 
         int CS_Pin_;
         //---Variable---//
         //-RS485//
         //RX
-        unsigned char RX_GO;       
-        unsigned char rx_count;						   //接收資料計數	
+        unsigned char rx_count;						                    //接收資料計數	
         //TX
-        unsigned char TX_Data_buf[RS485_TX_SIZE];
-        unsigned char Watch_Flag;                      //驅動顯示旗標(0:關/1:開)
+        unsigned char TX_Data_buf[RS485_TX_SIZE];                       //驅動器指令傳送資料暫存陣列
         //-CRC
         unsigned short crc_Rx_R,crc_Rx_L;
-        unsigned char RX_ID1_Hi,RX_ID1_Lo;
-        unsigned char RX_ID2_Hi,RX_ID2_Lo;
-        //-speed limit
-        float protect_speed,protect_omega;
-        float max_linear_speed;             				
-        float max_angular_speed;            			
-        float ros_linear_x;
-        float ros_angular_z;
-        //-DEBUG
-        unsigned char rece;
-
+        unsigned char RX_ID1_Hi,RX_ID1_Lo;                              //左輪接收資料暫存高位元,左輪接收資料暫存低位元
+        unsigned char RX_ID2_Hi,RX_ID2_Lo;                              //右輪接收資料暫存高位元,右輪接收資料暫存低位元
         //---Function---//      
 };
 #endif

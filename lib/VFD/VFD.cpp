@@ -2,17 +2,17 @@
 #include "VFD.h"
 //建構子
 VFD::VFD(int CS_Pin){
-    CS_Pin_ = CS_Pin;
+    CS_Pin_ = CS_Pin;                                             //RS485_CS
 }
 
 //驅動器初始化
-void VFD::init(){
-  Serial1.begin(115200);                                          //RS485
+void VFD::init(){                                                 ////RS485_初始化
+  Serial1.begin(115200);                                          //RS485_USART
   pinMode(CS_Pin_, OUTPUT);                                
-  digitalWrite(CS_Pin_, RS485Receive);                      
+  digitalWrite(CS_Pin_, RS485Receive);                                                  
 }
 
-//驅動器命令格式
+//驅動器傳送命令格式
 void VFD::Command_TX(unsigned char Num,unsigned char Command1,unsigned char ID1_MSB,unsigned char ID1_LSB,unsigned char Command2,unsigned char ID2_MSB,unsigned char ID2_LSB){ 
   TX_Data_buf[0] = 0x00;
   TX_Data_buf[1] = 0x41;
@@ -50,7 +50,7 @@ unsigned short VFD::crc_chk(unsigned char *buf, int length) {
   }
   return crc;
 }
-
+//驅動器傳送命令指令(寫/讀)
 void VFD::VFD_COMMAND(){
   unsigned short crc_Tx=0;
   if(command_state==0)
@@ -67,32 +67,32 @@ void VFD::VFD_COMMAND(){
     delay(2);                                                   //Master: DE/RE set HIGH 傳後 set LOW 等待SLAVE回應資料
     digitalWrite(CS_Pin_, RS485Receive);                        //等待接收驅動器資料
     delay(2);
-    RX_DATA_Flag=1;                                             //關閉顯示旗標
+    RX_DATA_Flag=1;                                             //開啟驅動器接收資料確認旗標(0:關/1:開)
 }
 
 // RX-驅動器回授資料
 void VFD::VFD_DATA_RX(){
 	int rx_count=0;
 if(RX_DATA_Flag==1){
-	for (rx_count=0;rx_count<RS485_RX_SIZE;rx_count++){           //VFD_DATA
+	for (rx_count=0;rx_count<RS485_RX_SIZE;rx_count++){           //驅動器接收中斷資料
 				RX_Data[rx_count]=RX_Data_buf[rx_count];
 	}//end or (i=0;i<SIZE_RX;i++){
 	
-	for (rx_count=0;rx_count<8;rx_count++){         							//LWeel_DATA
+	for (rx_count=0;rx_count<8;rx_count++){         							//驅動器左輪接收中斷資料LWeel_DATA(資料分割)
 				DATA_RX_ID1[rx_count]=RX_Data[rx_count];
 	}//end or (i=0;i<SIZE_RX;i++){
 		
-	for (rx_count=0;rx_count<8;rx_count++){         							//RWeel_DATA
+	for (rx_count=0;rx_count<8;rx_count++){         							//驅動器右輪接收中斷資料RWeel_DATA(資料分割)
 				DATA_RX_ID2[rx_count]=RX_Data[rx_count+8];
 	}//end or (i=0;i<SIZE_RX;i++){
 	
 
 //計算CRC是否正確	
-  crc_Rx_L= crc_chk(DATA_RX_ID1,RX_SIZE_CRC);                   //L
+  crc_Rx_L= crc_chk(DATA_RX_ID1,RX_SIZE_CRC);                   //驅動器左輪接收中斷資料LWeel_DATA(CRC)
   RX_ID1_Hi=crc_Rx_L;
   RX_ID1_Lo=crc_Rx_L>>8;
 	
-	crc_Rx_R= crc_chk(DATA_RX_ID2,RX_SIZE_CRC);                   //R
+	crc_Rx_R= crc_chk(DATA_RX_ID2,RX_SIZE_CRC);                   //驅動器右輪接收中斷資料RWeel_DATA(CRC)
   RX_ID2_Hi=crc_Rx_R;
   RX_ID2_Lo=crc_Rx_R>>8;
 	
@@ -105,20 +105,20 @@ if(RX_DATA_Flag==1){
 	}//end 	if((DATA_RX_ID2[6]==RX_ID2_Hi)&&(DATA_RX_ID2[7]==RX_ID2_Lo)){
 	
 	
-//左輪  
-  if(LWeel_Rspeed_temp>3600){                                  //down
+//左輪方向轉換  
+  if(LWeel_Rspeed_temp>3600){                                  //方向往後
     LWeel_Rspeed_s=(65536-LWeel_Rspeed_temp);
     LWeel_Rspeed =(float)(LWeel_Rspeed_s)*(-1);
-  }else if(LWeel_Rspeed_temp<=3600){                           //up
+  }else if(LWeel_Rspeed_temp<=3600){                           //方向往前
       LWeel_Rspeed_s=(LWeel_Rspeed_temp);
       LWeel_Rspeed = (float)(LWeel_Rspeed_s);   
   }
 	
-//右輪
-  if(RWeel_Rspeed_temp>3600){                                  //up
+//右輪方向轉換
+  if(RWeel_Rspeed_temp>3600){                                  //方向往前
       RWeel_Rspeed_s=(65536-RWeel_Rspeed_temp);
       RWeel_Rspeed = (float)(RWeel_Rspeed_s);
-  }else if(RWeel_Rspeed_temp<=3600){                           //down
+  }else if(RWeel_Rspeed_temp<=3600){                           //方向往後
       RWeel_Rspeed_s=(RWeel_Rspeed_temp);
       RWeel_Rspeed = (float)(RWeel_Rspeed_s)*(-1);  
   }
@@ -127,6 +127,7 @@ if(RX_DATA_Flag==1){
 	
 }//end void VFD_DATA_RX(){
 
+//RX接收中斷資料
 void VFD::VFD_DATA_ISR(){                                        
   while(Serial1.available()){  
 
@@ -160,32 +161,11 @@ void VFD::VFD_DATA_ISR(){
     }//end while(Serial1.available()){
   }
 
-
+//MS單位轉RPM單位
 void VFD::MS_TO_RPM()
 { 
-//~~~~~~~command Protect~~~~~~~~//
-//------speed-----//
- if(ros_linear_x>max_linear_speed){
-  protect_speed=max_linear_speed;
- }else if(ros_linear_x<(-max_linear_speed)){
-  protect_speed=-max_linear_speed;
- }else{
-  protect_speed=ros_linear_x;
- }
-//-----omega-----//
- if(ros_angular_z>max_angular_speed){
-  protect_omega=max_angular_speed;
- }else if(ros_angular_z<(-max_angular_speed)){
-  protect_omega=-max_angular_speed;
- }else{
-  protect_omega=ros_angular_z;
- }
-
 //~~~~~~VFD Command Caculate~~~~//
-
 //L
-  //linear_vel_x_L = 30*((protect_speed)*(60/(wheel_diameter*pi)))-30*(0.5*protect_omega*wheel_spacing*(60/(2*pi)))*(11.5);                  //(m/s) TO (rpm)
-
   if(linear_vel_x_L>=0)                               										//正轉                                                                               
     linear_vel_x_TL=(int)(linear_vel_x_L+0.5);
   else                                                									  //反轉
@@ -195,8 +175,6 @@ void VFD::MS_TO_RPM()
   linear_vel_x_L_Hi=(linear_vel_x_TL)>>8;
 	
 //R	
-	//linear_vel_x_R = 30*((protect_speed)*(60/(wheel_diameter*pi)))+30*(0.5*protect_omega*wheel_spacing*(60/(2*pi)))*(11.5);                  //(m/s) TO (rpm)
-  
   if(linear_vel_x_R>=0)                               								 		//正轉(右輪方向相反) 
     linear_vel_x_TR=65536-(int)(linear_vel_x_R+0.5);                                                                                
   else                                                										//反轉
@@ -207,14 +185,7 @@ void VFD::MS_TO_RPM()
  
 }
 
-void VFD::Timer_ISR(){
-  if(millis() > time_1 + INTERVAL_MESSAGE1){
-    time_1 = millis();
-    //if(TX_Read_Fun==1)
-	    TX_Read_GO=1;  
-  }
-}
-
+//驅動器方向指令
 void VFD::VFD_SPEED_COMMAND(int fun , float lspeed,float rspeed ){              
  		command_state=fun;
 		linear_vel_x_R=rspeed;                      
