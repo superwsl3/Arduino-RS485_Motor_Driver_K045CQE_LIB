@@ -1,10 +1,8 @@
 #include <Arduino.h>
-#include "VFD.h"
+#include "RS485_ISR.h"
 int ONCE=0;                                       //1次指令
-const byte VFD_CS_Pin = 2;							          //RS485_CS
-VFD RS485_VFD(VFD_CS_Pin);
-int L_RPM;
-int R_RPM;
+
+
 
 //驅動器接收資料
 void DEBUG(){
@@ -22,19 +20,16 @@ void setup(){
 
 void loop() {
   if(ONCE==0){                                    //1次指令
-    RS485_VFD.VFD_SPEED_Write(300, 200);          //寫入轉速至驅動器(指令:0/寫,1/讀;左輪轉速;右輪轉速)
+    RS485_VFD.VFD_SPEED_Write(100, -100);          //寫入轉速至驅動器(指令:0/寫,1/讀;左輪轉速;右輪轉速)
     delay(100);                                   //指令間格時間(delay,不能太快否則導致收區資料異常)
-    RS485_VFD.VFD_SPEED_Read();   	              //讀取驅動器轉速
-    ONCE=1;
+    //RS485_VFD.VFD_SPEED_Read();   	              //讀取驅動器轉速
+    ONCE=0;
   }            
   DEBUG();
 }
 
 
-//驅動器接收中斷
-void serialEvent1(){                                         
-    RS485_VFD.VFD_DATA_ISR(&L_RPM, &R_RPM);
-}//end void serialEvent1(){
+
 
  
     
