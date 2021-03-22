@@ -128,7 +128,7 @@ if(RX_DATA_Flag==1){
 }//end void VFD_DATA_RX(){
 
 //RX接收中斷資料
-void VFD::VFD_DATA_ISR(){                                        
+void VFD::VFD_DATA_ISR(int *lspeed_out, int *rspeed_out){                                        
   while(Serial1.available()){  
 
   	RX_Data_buf[RX_INDEX-1] = Serial1.read();                  //接收數據轉存
@@ -151,6 +151,8 @@ void VFD::VFD_DATA_ISR(){
 			RX_INDEX=0;
 		}else if((RX_INDEX==16) && (RX_Data_buf[0]==0x01)&& (RX_Data_buf[1]==0x42)&& (RX_Data_buf[2]==0x00)&& (RX_Data_buf[3]==0x04)&& (RX_Data_buf[8]==0x02)&& (RX_Data_buf[9]==0x42)&& (RX_Data_buf[10]==0x00)&&(RX_Data_buf[11]==0x04)){
 			VFD_DATA_RX();
+      *lspeed_out=LWeel_Rspeed;
+      *rspeed_out=RWeel_Rspeed;
 		}
 				
 		if(RX_INDEX>=RX_SIZE_BOUND) { 																																										
@@ -186,19 +188,21 @@ void VFD::MS_TO_RPM()
 }
 
 //轉速指令寫
-void VFD::VFD_SPEED_COMMAND(float lspeed,float rspeed ){              
+void VFD::VFD_SPEED_Write(float lspeed_in,float rspeed_in ){              
  		command_state=0;
-		linear_vel_x_R=rspeed;                      
-    linear_vel_x_L=lspeed;  
+		linear_vel_x_R=rspeed_in;                      
+    linear_vel_x_L=lspeed_in;  
 		MS_TO_RPM();
 		VFD_COMMAND();
 }
 
 //轉速指令讀
-void VFD::VFD_SPEED_COMMAND(){              
+void VFD::VFD_SPEED_Read(){              
  		command_state=1;
 		linear_vel_x_R=0;                      
     linear_vel_x_L=0;  
 		MS_TO_RPM();
 		VFD_COMMAND();
+
 }
+

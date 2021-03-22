@@ -17,12 +17,11 @@ class VFD{
         //---Constructor---//
         VFD(int CS_Pin);                                                //建構子
         //---Variable---//
-        float LWeel_Rspeed,RWeel_Rspeed;                                //左輪實際轉速(rpm),右輪實際轉速(rpm)
         //---Function---//
         void init();                                                    //VFD初始化
-        void VFD_DATA_ISR();                                            //VFD接收中斷
-        void VFD_SPEED_COMMAND(float lspeed,float rspeed );             //轉速指令寫
-        void VFD_SPEED_COMMAND();                                       //轉速指令讀
+        void VFD_DATA_ISR(int *lspeed_out, int *rspeed_out);                                            //VFD接收中斷
+        void VFD_SPEED_Write(float lspeed_in,float rspeed_in );         //轉速指令寫
+        void VFD_SPEED_Read();          //轉速指令讀
     private:
         //---Constructor---// 
         int CS_Pin_;
@@ -46,6 +45,7 @@ class VFD{
         unsigned short linear_vel_x_TR;                                 //驅動器右輪轉速(rpm)輸入變數
         unsigned char linear_vel_x_L_Hi,linear_vel_x_L_Lo;              //驅動器左輪轉速(rpm)輸入變數_高位元,驅動器左輪轉速(rpm)輸入變數_低位元
         unsigned char linear_vel_x_R_Hi,linear_vel_x_R_Lo;              //驅動器右輪轉速(rpm)輸入變數_高位元,驅動器右輪轉速(rpm)輸入變數_低位元
+        float LWeel_Rspeed,RWeel_Rspeed;                                //左輪實際轉速(rpm),右輪實際轉速(rpm)
         //---VDF_DATA TO Arduino---/
         signed int  LWeel_Rspeed_temp,RWeel_Rspeed_temp;                //左輪:確認CRC正確,資料放入轉速暫存器變數,右輪:確認CRC正確,資料放入轉速暫存器變數
         signed int  RWeel_Rspeed_s,LWeel_Rspeed_s;                      //左輪:方向轉換變數暫存,右輪:方向轉換變數暫存	

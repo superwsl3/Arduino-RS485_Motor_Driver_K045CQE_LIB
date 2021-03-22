@@ -1,0 +1,7 @@
+1.建構子一班搭配腳位
+2.class的public相當於全域變數只是要加class別名(ex:aaa.bbb)
+  class的private不可附值
+  public變數可在main內呼叫修改,private只可在class修改讀取		
+3.建構子函數需與class別名相同
+4.class相當於變數型態
+5.可使用多型簡化函式(即相同函數名稱不同引數)
