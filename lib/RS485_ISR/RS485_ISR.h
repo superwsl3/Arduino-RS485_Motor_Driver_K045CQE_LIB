@@ -8,11 +8,13 @@
 #include <VFD.h>
 int L_RPM;
 int R_RPM;
-const byte VFD_CS_Pin = 4;	
-VFD RS485_VFD(VFD_CS_Pin);
+const byte VFD_CS_Pin = 4;
+const int Max_RPM = 3600;
+VFD RS485_VFD(VFD_CS_Pin, Max_RPM);
 //驅動器接收中斷
-void serialEvent1(){                                         
+void serialEvent1()
+{
     RS485_VFD.VFD_DATA_ISR(&L_RPM, &R_RPM);
-}//end void serialEvent1(){
-    
+} //end void serialEvent1(){
+
 #endif
