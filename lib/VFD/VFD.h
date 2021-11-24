@@ -16,7 +16,7 @@ class VFD
 {
 public:
     //---Constructor---//
-    VFD(int CS_Pin, int MAX_RPM); //建構子
+    VFD(int CS_Pin, int MAX_RPM); //建構子                                                //建構子
     //---Variable---//
     //---Function---//
     void init();                                            //VFD初始化

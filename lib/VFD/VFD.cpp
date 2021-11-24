@@ -190,8 +190,8 @@ void VFD::VFD_DATA_ISR(int *lspeed_out, int *rspeed_out)
     else if ((RX_INDEX == 16) && (RX_Data_buf[0] == 0x01) && (RX_Data_buf[1] == 0x42) && (RX_Data_buf[2] == 0x00) && (RX_Data_buf[3] == 0x04) && (RX_Data_buf[8] == 0x02) && (RX_Data_buf[9] == 0x42) && (RX_Data_buf[10] == 0x00) && (RX_Data_buf[11] == 0x04))
     {
       VFD_DATA_RX();
-      *lspeed_out = LWeel_Rspeed; // return data 用
-      *rspeed_out = RWeel_Rspeed; // return data 用
+      *lspeed_out = LWeel_Rspeed;
+      *rspeed_out = RWeel_Rspeed;
     }
 
     if (RX_INDEX >= RX_SIZE_BOUND)
@@ -208,17 +208,20 @@ void VFD::MS_TO_RPM()
 {
   //~~~~~~VFD Command Caculate~~~~//
   //L
-
   if (linear_vel_x_L >= MAX_RPM_) //SPEED_LIMIT-正轉
     linear_vel_x_L = MAX_RPM_;
 
   if (linear_vel_x_L < -MAX_RPM_) //SPEED_LIMIT-反轉
     linear_vel_x_L = -MAX_RPM_;
 
-  if (linear_vel_x_L >= 0) //正轉
-    linear_vel_x_TL = (int)(linear_vel_x_L + 0.5);
-  else //反轉
-    linear_vel_x_TL = 65536 + (int)(linear_vel_x_L - 0.5);
+  if (linear_vel_x_L >= 0)
+  { //正轉
+    linear_vel_x_TL = (int)(abs(linear_vel_x_L));
+  }
+  else
+  { //反轉
+    linear_vel_x_TL = 65536 - (int)(abs(linear_vel_x_L));
+  }
 
   linear_vel_x_L_Lo = linear_vel_x_TL; //命令轉速
   linear_vel_x_L_Hi = (linear_vel_x_TL) >> 8;
@@ -230,10 +233,14 @@ void VFD::MS_TO_RPM()
   if (linear_vel_x_R < -MAX_RPM_) //SPEED_LIMIT-反轉
     linear_vel_x_R = -MAX_RPM_;
 
-  if (linear_vel_x_R >= 0) //正轉(右輪方向相反)
-    linear_vel_x_TR = 65536 - (int)(linear_vel_x_R + 0.5);
+  if (linear_vel_x_R >= 0)
+  { //正轉(右輪方向相反)
+    linear_vel_x_TR = 65536 - (int)(abs(linear_vel_x_R));
+  }
   else //反轉
-    linear_vel_x_TR = (int)((-1) * (linear_vel_x_R - 0.5));
+  {
+    linear_vel_x_TR = (int)(abs(linear_vel_x_R));
+  }
 
   linear_vel_x_R_Lo = linear_vel_x_TR; //命令轉速
   linear_vel_x_R_Hi = (linear_vel_x_TR) >> 8;
